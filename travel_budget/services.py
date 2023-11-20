@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient import discovery
-from pprint import pprint
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -11,8 +10,8 @@ SCOPES = [
 ]
 
 load_dotenv()
-
-info = {
+EMAIL_USER = os.environ['EMAIL']
+INFO = {
     'type':  os.environ['TYPE'],
     'project_id':  os.environ['PROJECT_ID'],
     'private_key_id':  os.environ['PRIVATE_KEY_ID'],
@@ -24,29 +23,14 @@ info = {
     'auth_provider_x509_cert_url':  os.environ['AUTH_PROVIDER_X509_CERT_URL'],
     'client_x509_cert_url':  os.environ['CLIENT_X509_CERT_URL']
 }
+CREDENTIALS = Credentials.from_service_account_info(info=INFO, scopes=SCOPES)
+SHEETS_SERVICE = discovery.build('sheets', 'v4', credentials=CREDENTIALS)
+DRIVE_SERVICE = discovery.build('drive', 'v3', credentials=CREDENTIALS)
 
 
-def auth():
-    credentials = Credentials.from_service_account_info(
-        info=info, scopes=SCOPES)
-    service = discovery.build('drive', 'v3', credentials=credentials)
-    return service
+def auth_sheets():
+    return SHEETS_SERVICE, CREDENTIALS
 
 
-def get_list_obj(service):
-    response = service.files().list(
-        q='mimeType="application/vnd.google-apps.spreadsheet"')
-    return response.execute()
-
-
-def clear_disk(service, spreadsheets):
-    for spreadsheet in spreadsheets:
-        response = service.files().delete(fileId=spreadsheet['id'])
-        response.execute()
-
-
-service = auth()
-spreadsheets = get_list_obj(service)['files']
-
-pprint(spreadsheets)
-clear_disk(service, spreadsheets)
+def auth_drive():
+    return DRIVE_SERVICE, CREDENTIALS
